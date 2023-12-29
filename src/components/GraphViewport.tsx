@@ -7,6 +7,7 @@ import LoadingAnimation from './utils/LoadingAnimation';
 
 interface GraphViewportProps {
   typeGraph: TypeGraph | null;
+  svg: string | null;
 
   selectedTypeID: string | null;
   selectedEdgeID: string | null;
@@ -87,7 +88,7 @@ export default class GraphViewport extends Component<
     this._currentTypeGraph = typeGraph;
 
     const { onSelectNode, onSelectEdge } = this.props;
-    renderSvg(typeGraph)
+    renderSvg(this.props.svg ?? typeGraph)
       .then((svg) => {
         if (typeGraph !== this._currentTypeGraph) {
           return; // One of the past rendering jobs finished

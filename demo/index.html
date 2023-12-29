@@ -121,14 +121,16 @@
         GitHub: await fetchPreset('github'),
       };
 
-      const defaultPreset = PRESETS['Star Wars'];
+      // const defaultPreset = PRESETS['Star Wars'];
 
       const currentUrl = new URL(window.location.href);
       const url = currentUrl.searchParams.get('url');
       const withCredentials = currentUrl.searchParams.get('withCredentials');
 
       const introspection =
-        url != null ? fetchIntrospection(url, withCredentials) : defaultPreset;
+        url != null
+          ? fetchIntrospection(url, withCredentials)
+          : fetchPrebuiltGraph();
 
       renderVoyager(document.getElementById('root'), {
         introspection,
@@ -155,6 +157,17 @@
             : {}),
         });
         return response.json();
+      }
+
+      async function fetchPrebuiltGraph() {
+        const [introspection, svg] = await Promise.all([
+          fetch('./presets/swapi_introspection.json').then((response) =>
+            response.json(),
+          ),
+          fetch('./presets/swapi.svg').then((response) => response.text()),
+        ]);
+
+        return { introspection, svg };
       }
     </script>
     <main id="root">

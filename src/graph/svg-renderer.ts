@@ -5,11 +5,14 @@ import { TypeGraph } from './type-graph';
 
 const vizWorker = new VizWorker();
 
-export async function renderSvg(typeGraph: TypeGraph) {
-  const dot = getDot(typeGraph);
-  const rawSVG = await vizWorker.renderString(dot);
-  const svg = preprocessVizSVG(rawSVG);
-  return svg;
+// TODO: cleanup / clarify argument name
+export async function renderSvg(rawSVG: TypeGraph | string) {
+  if ('object' === typeof rawSVG) {
+    const dot = getDot(rawSVG);
+    rawSVG = await vizWorker.renderString(dot);
+  }
+
+  return preprocessVizSVG(rawSVG);
 }
 
 const RelayIconSvg = require('!!svg-as-symbol-loader?id=RelayIcon!../components/icons/relay-icon.svg');

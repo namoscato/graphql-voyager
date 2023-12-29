@@ -16,7 +16,8 @@ import {
   useState,
 } from 'react';
 
-import { getTypeGraph } from '../graph/type-graph';
+import { isPrebuiltGraph, PrebuiltGraph } from '../graph/prebuiltGraph';
+import { getTypeGraph, TypeGraph } from '../graph/type-graph';
 import { getSchema } from '../introspection/introspection';
 import { extractTypeName, typeNameToId } from '../introspection/utils';
 import { MaybePromise, usePromise } from '../utils/usePromise';
@@ -39,7 +40,7 @@ export interface VoyagerDisplayOptions {
 
 export interface VoyagerProps {
   introspection?: MaybePromise<
-    ExecutionResult<IntrospectionQuery> | GraphQLSchema
+    ExecutionResult<IntrospectionQuery> | GraphQLSchema | PrebuiltGraph
   >;
   displayOptions?: VoyagerDisplayOptions;
   introspectionPresets?: { [name: string]: any };
@@ -77,24 +78,26 @@ export default function Voyager(props: VoyagerProps) {
     setDisplayOptions(initialDisplayOptions);
   }, [introspectionResult, initialDisplayOptions]);
 
-  const typeGraph = useMemo(() => {
+  const typeGraph = useMemo<TypeGraph | null>(() => {
     if (introspectionResult.loading || introspectionResult.value == null) {
       // FIXME: display introspectionResult.error
       return null;
     }
 
+    const introspection = isPrebuiltGraph(introspectionResult.value)
+      ? introspectionResult.value.introspection
+      : introspectionResult.value;
+
     let introspectionSchema;
-    if (introspectionResult.value instanceof GraphQLSchema) {
-      introspectionSchema = introspectionResult.value;
+
+    if (introspection instanceof GraphQLSchema) {
+      introspectionSchema = introspection;
     } else {
-      if (
-        introspectionResult.value.errors != null ||
-        introspectionResult.value.data == null
-      ) {
+      if (introspection.errors != null || introspection.data == null) {
         // FIXME: display errors
         return null;
       }
-      introspectionSchema = buildClientSchema(introspectionResult.value.data);
+      introspectionSchema = buildClientSchema(introspection.data);
     }
 
     const schema = getSchema(introspectionSchema, displayOptions);
@@ -206,9 +209,14 @@ export default function Voyager(props: VoyagerProps) {
   }
 
   function renderGraphViewport() {
+    const svg = isPrebuiltGraph(introspectionResult.value)
+      ? introspectionResult.value.svg
+      : null;
+
     return (
       <GraphViewport
         typeGraph={typeGraph}
+        svg={svg}
         selectedTypeID={selected.typeID}
         selectedEdgeID={selected.edgeID}
         onSelectNode={handleSelectNode}
